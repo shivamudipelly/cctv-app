@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mobile CCTV with Sleep Mode</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Mobile CCTV</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * {
@@ -19,7 +19,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #0a0e17;
+      background: #000;
       font-family: 'Inter', sans-serif;
       color: white;
     }
@@ -36,66 +36,55 @@
       transform: scaleX(-1);
     }
 
-    .glass-overlay {
+    .overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(10, 14, 23, 0.7);
-      backdrop-filter: blur(15px);
       z-index: 2;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      padding: 25px;
+      padding: 20px;
+      pointer-events: none;
     }
 
-    .header {
+    .top-bar {
       width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 20px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      pointer-events: auto;
     }
 
     .logo {
       font-weight: 700;
-      font-size: 20px;
+      font-size: 18px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: linear-gradient(135deg, #6e8efb, #a777e3);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      gap: 8px;
     }
 
     .logo-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, #6e8efb, #a777e3);
-      border-radius: 8px;
+      width: 28px;
+      height: 28px;
+      background: #4361ee;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     #status {
-      background: rgba(0, 0, 0, 0.4);
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: 20px;
-      font-weight: 500;
-      font-size: 14px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      gap: 8px;
     }
 
     .status-indicator {
@@ -107,288 +96,121 @@
 
     .status-indicator.ready {
       background: #4cc759;
-      box-shadow: 0 0 10px #4cc759;
     }
 
     .status-indicator.connecting {
       background: #ffbd44;
-      box-shadow: 0 0 10px #ffbd44;
       animation: pulse 1.5s infinite;
     }
 
     .status-indicator.connected {
       background: #4361ee;
-      box-shadow: 0 0 10px #4361ee;
       animation: pulse 1.5s infinite;
     }
 
-    .main-content {
+    .center-controls {
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 100%;
-      max-width: 500px;
-      margin: 20px 0;
-    }
-
-    .preview-container {
-      width: 100%;
-      height: 220px;
-      border-radius: 20px;
-      overflow: hidden;
-      margin-bottom: 25px;
-      position: relative;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    }
-
-    #previewVideo {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .preview-overlay {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      padding: 15px;
-      background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .preview-text {
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
       gap: 15px;
-      width: 100%;
-      margin-bottom: 25px;
-    }
-
-    .stat-card {
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 18px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    }
-
-    .stat-value {
-      font-weight: 700;
-      font-size: 20px;
-      margin-bottom: 5px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      opacity: 0.8;
-    }
-
-    .controls {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      padding: 25px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      pointer-events: auto;
     }
 
     #startBtn {
-      width: 100%;
-      padding: 20px;
-      font-size: 18px;
-      font-weight: 600;
-      background: linear-gradient(135deg, #6e8efb, #a777e3);
-      color: #fff;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
       border: none;
-      border-radius: 16px;
-      cursor: pointer;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 12px;
-      box-shadow: 0 8px 25px rgba(110, 142, 251, 0.4);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
       transition: all 0.3s ease;
     }
 
     #startBtn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(110, 142, 251, 0.6);
+      transform: scale(1.05);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
     }
 
     #startBtn:active {
-      transform: translateY(0);
+      transform: scale(0.95);
     }
 
     #startBtn:disabled {
-      background: linear-gradient(135deg, #6c757d, #495057);
+      background: rgba(255, 255, 255, 0.6);
+      cursor: not-allowed;
       transform: none;
       box-shadow: none;
-      cursor: not-allowed;
     }
 
     .btn-icon {
-      font-size: 22px;
+      font-size: 30px;
+      color: #4361ee;
     }
 
-    .sleep-mode {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .bottom-bar {
       width: 100%;
+      display: flex;
+      justify-content: center;
       padding: 15px;
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      pointer-events: auto;
     }
 
-    .sleep-mode-text {
-      font-weight: 500;
-    }
-
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 24px;
-    }
-
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      border-radius: 24px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: #4361ee;
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
-
-    .quality-info {
+    .connection-info {
       display: flex;
-      justify-content: space-between;
-      width: 100%;
-      padding: 0 10px;
+      gap: 20px;
     }
 
-    .quality-item {
+    .info-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
     }
 
-    .quality-value {
+    .info-icon {
+      font-size: 20px;
+      opacity: 0.8;
+    }
+
+    .info-value {
       font-weight: 600;
       font-size: 16px;
     }
 
-    .quality-label {
-      font-size: 12px;
-      opacity: 0.8;
-    }
-
-    .footer {
-      font-size: 13px;
-      opacity: 0.7;
-      text-align: center;
-      margin-top: 15px;
-    }
-
-    .sleep-indicator {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.8);
-      padding: 20px 30px;
-      border-radius: 16px;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-
-    .sleep-indicator.active {
-      opacity: 1;
-    }
-
-    .sleep-icon {
-      font-size: 40px;
-      color: #4361ee;
-    }
-
-    .sleep-text {
-      font-weight: 500;
-    }
-
     @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.6; }
-      100% { opacity: 1; }
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.6;
+      }
+
+      100% {
+        opacity: 1;
+      }
     }
 
     /* Portrait mode adjustments */
-    @media (max-height: 800px) {
-      .glass-overlay {
-        padding: 20px;
+    @media (max-height: 700px) {
+      .overlay {
+        padding: 15px;
       }
-      
-      .preview-container {
-        height: 180px;
-        margin-bottom: 20px;
+
+      #startBtn {
+        width: 70px;
+        height: 70px;
       }
-      
-      .stats-grid {
-        margin-bottom: 20px;
-      }
-      
-      .controls {
-        padding: 20px;
+
+      .btn-icon {
+        font-size: 25px;
       }
     }
   </style>
@@ -396,156 +218,59 @@
 
 <body>
   <video id="localVideo" autoplay playsinline muted></video>
-  
-  <div class="glass-overlay">
-    <div class="header">
+
+  <div class="overlay">
+    <div class="top-bar">
       <div class="logo">
         <div class="logo-icon">
           <i class="fas fa-video"></i>
         </div>
-        <span>SecureStream</span>
+        <span>CCTV</span>
       </div>
       <div id="status">
         <div class="status-indicator"></div>
-        <span>Initializing...</span>
+        <span>Ready</span>
       </div>
     </div>
-    
-    <div class="main-content">
-      <div class="preview-container">
-        <video id="previewVideo" autoplay playsinline muted></video>
-        <div class="preview-overlay">
-          <div class="preview-text">Live Preview</div>
-          <div class="preview-text">HD 720p</div>
-        </div>
-      </div>
-      
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="resolution">720p</div>
-          <div class="stat-label">Resolution</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="frameRate">30fps</div>
-          <div class="stat-label">Frame Rate</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="bitrate">0 KB/s</div>
-          <div class="stat-label">Bitrate</div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="controls">
+
+    <div class="center-controls">
       <button id="startBtn">
         <span class="btn-icon"><i class="fas fa-satellite-dish"></i></span>
-        <span>START LIVE STREAM</span>
       </button>
-      
-      <div class="sleep-mode">
-        <div class="sleep-mode-text">Sleep Mode (Screen Off)</div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="sleepModeToggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-      
-      <div class="quality-info">
-        <div class="quality-item">
-          <div class="quality-value">High</div>
-          <div class="quality-label">Quality</div>
-        </div>
-        <div class="quality-item">
-          <div class="quality-value">Secure</div>
-          <div class="quality-label">Connection</div>
-        </div>
-        <div class="quality-item">
-          <div class="quality-value">24/7</div>
-          <div class="quality-label">Monitoring</div>
-        </div>
-      </div>
     </div>
-    
-    <div class="footer">
-      <i class="fas fa-lock"></i> Encrypted & Secure • v2.0
-    </div>
-  </div>
-  
-  <div class="sleep-indicator" id="sleepIndicator">
-    <div class="sleep-icon">
-      <i class="fas fa-moon"></i>
-    </div>
-    <div class="sleep-text">Sleep Mode Active - Streaming in Background</div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://unpkg.com/simple-peer@9.11.0/simplepeer.min.js"></script>
   <script>
     const video = document.getElementById('localVideo');
-    const previewVideo = document.getElementById('previewVideo');
     const startBtn = document.getElementById('startBtn');
     const statusEl = document.getElementById('status');
     const statusIndicator = document.querySelector('.status-indicator');
     const statusText = statusEl.querySelector('span');
-    const resolutionEl = document.getElementById('resolution');
-    const frameRateEl = document.getElementById('frameRate');
     const bitrateEl = document.getElementById('bitrate');
-    const sleepModeToggle = document.getElementById('sleepModeToggle');
-    const sleepIndicator = document.getElementById('sleepIndicator');
-    const glassOverlay = document.querySelector('.glass-overlay');
+    const frameRateEl = document.getElementById('frameRate');
 
     const socket = io();
     let peer;
     let stream;
     let bitrateInterval;
-    let wakeLock = null;
-
-    // Request wake lock to prevent screen from sleeping
-    async function requestWakeLock() {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
-          console.log('Wake Lock is active');
-          
-          wakeLock.addEventListener('release', () => {
-            console.log('Wake Lock was released');
-          });
-        }
-      } catch (err) {
-        console.error('Failed to get wake lock:', err);
-      }
-    }
-
-    // Handle visibility change
-    document.addEventListener('visibilitychange', async () => {
-      if (document.visibilityState === 'visible' && wakeLock === null && sleepModeToggle.checked) {
-        await requestWakeLock();
-      }
-    });
 
     async function startCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 30, max: 30 },
-            aspectRatio: { ideal: 16 / 9 }
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30, max: 30 }
           },
           audio: false
         });
         video.srcObject = stream;
-        previewVideo.srcObject = stream;
-        updateStatus('ready', 'Camera Ready');
-        
-        // Get and display actual camera capabilities
-        const videoTrack = stream.getVideoTracks()[0];
-        const settings = videoTrack.getSettings();
-        resolutionEl.textContent = `${settings.width || '720'}x${settings.height || '480'}`;
-        
+        updateStatus('ready', 'Ready');
       } catch (err) {
-        updateStatus('error', 'Camera Error');
+        updateStatus('error', 'Error');
         console.error(err);
       }
     }
@@ -553,8 +278,8 @@
     function updateStatus(status, text) {
       statusIndicator.className = 'status-indicator';
       statusText.textContent = text;
-      
-      switch(status) {
+
+      switch (status) {
         case 'ready':
           statusIndicator.classList.add('ready');
           break;
@@ -572,28 +297,27 @@
 
     function measureBitrate() {
       if (bitrateInterval) clearInterval(bitrateInterval);
-      
+
       let lastBytes = 0;
       const peerConnection = peer._pc;
-      
+
       bitrateInterval = setInterval(() => {
         if (!peerConnection || !peerConnection.getSenders) return;
-        
+
         peerConnection.getSenders().then(senders => {
           senders.forEach(sender => {
             if (sender.getStats) {
               sender.getStats().then(stats => {
                 stats.forEach(report => {
                   if (report.type === 'outbound-rtp' && report.mediaType === 'video') {
-                    const now = report.timestamp;
                     const bytes = report.bytesSent;
                     const bits = (bytes - lastBytes) * 8;
-                    const kbps = (bits / 1000).toFixed(1);
-                    
+                    const kbps = (bits / 1000).toFixed(0);
+
                     if (lastBytes > 0) {
-                      bitrateEl.textContent = `${kbps} KB/s`;
+                      bitrateEl.textContent = kbps;
                     }
-                    
+
                     lastBytes = bytes;
                   }
                 });
@@ -604,47 +328,21 @@
       }, 1000);
     }
 
-    // Toggle sleep mode
-    sleepModeToggle.addEventListener('change', function() {
-      if (this.checked) {
-        // Enable sleep mode
-        requestWakeLock();
-        glassOverlay.style.opacity = '0.3';
-        sleepIndicator.classList.add('active');
-        
-        // Hide UI after a delay
-        setTimeout(() => {
-          glassOverlay.style.display = 'none';
-        }, 1500);
-      } else {
-        // Disable sleep mode
-        if (wakeLock !== null) {
-          wakeLock.release();
-          wakeLock = null;
-        }
-        glassOverlay.style.display = 'flex';
-        setTimeout(() => {
-          glassOverlay.style.opacity = '1';
-          sleepIndicator.classList.remove('active');
-        }, 50);
-      }
-    });
-
     startBtn.onclick = async () => {
       if (!stream) await startCamera();
       if (!stream) return;
 
       startBtn.disabled = true;
-      updateStatus('connecting', 'Connecting to server...');
+      updateStatus('connecting', 'Connecting...');
 
       socket.emit('initiate');
 
       socket.on('ready', () => {
-        updateStatus('connecting', 'Waiting for monitor...');
+        updateStatus('connecting', 'Waiting...');
       });
 
       socket.on('startCall', ({ monitorId }) => {
-        updateStatus('connecting', 'Establishing connection...');
+        updateStatus('connecting', 'Connecting...');
 
         peer = new SimplePeer({
           initiator: true,
@@ -663,13 +361,13 @@
         });
 
         peer.on('connect', () => {
-          updateStatus('connected', 'LIVE STREAMING');
-          startBtn.innerHTML = '<span class="btn-icon"><i class="fas fa-broadcast-tower"></i></span><span>LIVE NOW</span>';
+          updateStatus('connected', 'Live');
+          startBtn.innerHTML = '<span class="btn-icon"><i class="fas fa-broadcast-tower"></i></span>';
           measureBitrate();
         });
 
         peer.on('error', err => {
-          updateStatus('error', 'Connection Error');
+          updateStatus('error', 'Error');
           console.error(err);
           if (bitrateInterval) clearInterval(bitrateInterval);
         });

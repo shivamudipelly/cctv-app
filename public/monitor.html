@@ -32,7 +32,7 @@
 
     .header {
       background: linear-gradient(to right, #1a1a1a, #0d0d0d);
-      padding: 15px 20px;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -49,19 +49,19 @@
 
     .logo i {
       color: #4CAF50;
-      font-size: 24px;
+      font-size: 20px;
     }
 
     .logo h1 {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
     }
 
     #status {
       background: rgba(0, 0, 0, 0.4);
-      padding: 8px 16px;
+      padding: 6px 12px;
       border-radius: 18px;
-      font-size: 14px;
+      font-size: 13px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -101,22 +101,28 @@
 
     .video-overlay {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 15px;
+      right: 15px;
       background: rgba(0, 0, 0, 0.6);
-      padding: 10px;
+      padding: 8px;
       border-radius: 8px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       z-index: 10;
+      opacity: 0.7;
+      transition: opacity 0.3s;
+    }
+
+    .video-overlay:hover {
+      opacity: 1;
     }
 
     .overlay-btn {
       background: #333;
       border: none;
       color: white;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -132,17 +138,18 @@
 
     .footer {
       background: linear-gradient(to right, #1a1a1a, #0d0d0d);
-      padding: 20px;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid #2a2a2a;
       flex-shrink: 0;
+      gap: 15px;
     }
 
     #joinBtn {
-      padding: 14px 32px;
-      font-size: 16px;
+      padding: 12px 24px;
+      font-size: 14px;
       font-weight: 600;
       background: linear-gradient(to right, #4CAF50, #2E7D32);
       color: #fff;
@@ -151,9 +158,10 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
       transition: all 0.3s;
+      flex-shrink: 0;
     }
 
     #joinBtn:hover {
@@ -170,26 +178,28 @@
 
     #controls {
       display: flex;
-      gap: 12px;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .control-group {
       background: rgba(0, 0, 0, 0.4);
-      padding: 10px;
+      padding: 8px;
       border-radius: 10px;
       display: flex;
-      gap: 8px;
+      gap: 6px;
       border: 1px solid #333;
     }
 
     .control-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
       background: #333;
       border: none;
       color: white;
-      font-size: 18px;
+      font-size: 14px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -206,69 +216,70 @@
       transform: scale(0.95);
     }
 
-    .aspect-ratio-info {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 8px 15px;
-      border-radius: 8px;
-      font-size: 12px;
+    .connection-info {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 15px;
+      font-size: 13px;
+      opacity: 0.8;
     }
 
-    .orientation-warning {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.8);
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      max-width: 80%;
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .info-icon {
+      font-size: 14px;
+    }
+
+    /* Collapse controls after some inactivity */
+    .footer.collapsed {
+      padding: 8px 15px;
+    }
+
+    .footer.collapsed #controls {
       display: none;
-      z-index: 20;
     }
 
-    .orientation-warning i {
-      font-size: 32px;
-      color: #FFA000;
-      margin-bottom: 10px;
+    .footer.collapsed .connection-info {
+      display: none;
     }
 
+    /* Media queries for responsive design */
     @media (max-width: 768px) {
       .footer {
         flex-direction: column;
-        gap: 20px;
-      }
-      
-      .control-group {
-        flex-wrap: wrap;
-        justify-content: center;
+        gap: 12px;
       }
       
       .header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
+        padding: 10px 15px;
       }
-
-      .orientation-warning {
-        display: block;
+      
+      .logo h1 {
+        font-size: 16px;
+      }
+      
+      #status {
+        font-size: 12px;
       }
     }
 
     @media (max-height: 500px) and (orientation: landscape) {
       .header, .footer {
-        padding: 10px;
+        padding: 8px 12px;
       }
       
       #joinBtn {
-        padding: 10px 20px;
-        font-size: 14px;
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+      
+      .control-btn {
+        width: 32px;
+        height: 32px;
       }
     }
   </style>
@@ -291,30 +302,19 @@
       <video id="remoteVideo" autoplay playsinline></video>
       
       <div class="video-overlay">
-        <button class="overlay-btn" id="fullscreenBtn">
+        <button class="overlay-btn" id="fullscreenBtn" title="Fullscreen">
           <i class="fas fa-expand"></i>
         </button>
-        <button class="overlay-btn" id="screenshotBtn">
+        <button class="overlay-btn" id="screenshotBtn" title="Take Screenshot">
           <i class="fas fa-camera"></i>
         </button>
       </div>
-      
-      <div class="aspect-ratio-info">
-        <i class="fas fa-expand-arrows-alt"></i>
-        <span id="aspectRatio">Waiting for video...</span>
-      </div>
-
-      <div class="orientation-warning">
-        <i class="fas fa-mobile-alt"></i>
-        <h3>Phone Orientation</h3>
-        <p>For best results, lock your phone in landscape mode</p>
-      </div>
     </div>
     
-    <div class="footer">
+    <div class="footer" id="footer">
       <button id="joinBtn">
         <i class="fas fa-plug"></i>
-        CONNECT TO PHONE STREAM
+        CONNECT TO STREAM
       </button>
       
       <div id="controls">
@@ -342,6 +342,17 @@
           </button>
         </div>
       </div>
+      
+      <div class="connection-info">
+        <div class="info-item">
+          <i class="fas fa-expand-arrows-alt info-icon"></i>
+          <span id="aspectRatio">-</span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-wifi info-icon"></i>
+          <span id="connectionStatus">Offline</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -353,6 +364,8 @@
     const statusEl = document.getElementById('status');
     const statusText = statusEl.querySelector('span');
     const aspectRatioInfo = document.getElementById('aspectRatio');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const footer = document.getElementById('footer');
     
     let scale = 1;
     let rotate = 0;
@@ -360,6 +373,7 @@
     let streamActive = false;
     let videoWidth = 0;
     let videoHeight = 0;
+    let inactivityTimer;
 
     // Apply video transformations
     function applyTransform() {
@@ -372,33 +386,52 @@
         const ratio = (videoWidth / videoHeight).toFixed(2);
         aspectRatioInfo.textContent = `${videoWidth}×${videoHeight} (${ratio}:1)`;
       } else {
-        aspectRatioInfo.textContent = 'Waiting for video...';
+        aspectRatioInfo.textContent = '-';
       }
+    }
+
+    // Reset inactivity timer
+    function resetInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      footer.classList.remove('collapsed');
+      
+      inactivityTimer = setTimeout(() => {
+        footer.classList.add('collapsed');
+      }, 3000);
     }
 
     // Initialize UI elements
     function initUI() {
+      // Set up inactivity detection
+      document.addEventListener('mousemove', resetInactivityTimer);
+      document.addEventListener('keypress', resetInactivityTimer);
+      document.addEventListener('touchstart', resetInactivityTimer);
+      
       // Zoom controls
       document.getElementById('zoomIn').onclick = () => {
         scale *= 1.2;
         applyTransform();
+        resetInactivityTimer();
       };
 
       document.getElementById('zoomOut').onclick = () => {
         scale /= 1.2;
         if (scale < 0.5) scale = 0.5;
         applyTransform();
+        resetInactivityTimer();
       };
 
       // Rotation controls
       document.getElementById('rotateLeft').onclick = () => {
         rotate -= 90;
         applyTransform();
+        resetInactivityTimer();
       };
 
       document.getElementById('rotateRight').onclick = () => {
         rotate += 90;
         applyTransform();
+        resetInactivityTimer();
       };
 
       // Reset view
@@ -406,6 +439,7 @@
         scale = 1;
         rotate = 0;
         applyTransform();
+        resetInactivityTimer();
       };
 
       // Fullscreen button
@@ -419,6 +453,7 @@
             document.exitFullscreen();
           }
         }
+        resetInactivityTimer();
       };
 
       // Screenshot button
@@ -443,6 +478,7 @@
         link.download = 'cctv-screenshot-' + new Date().toISOString().replace(/:/g, '-') + '.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
+        resetInactivityTimer();
       };
     }
 
@@ -457,10 +493,16 @@
       
       if (status === 'connecting') {
         icon.className = 'fas fa-sync-alt fa-spin';
+        connectionStatus.textContent = 'Connecting';
+        connectionStatus.style.color = '#FFA000';
       } else if (status === 'connected') {
         icon.className = 'fas fa-check-circle';
+        connectionStatus.textContent = 'Live';
+        connectionStatus.style.color = '#4CAF50';
       } else if (status === 'error') {
         icon.className = 'fas fa-exclamation-circle';
+        connectionStatus.textContent = 'Error';
+        connectionStatus.style.color = '#F44336';
       }
     }
 
@@ -544,6 +586,9 @@
       setupConnection();
       updateStatus('connecting', 'Connecting to server...');
       updateAspectRatioInfo();
+      
+      // Start inactivity timer
+      resetInactivityTimer();
       
       // Simulate connection to server
       setTimeout(() => {
