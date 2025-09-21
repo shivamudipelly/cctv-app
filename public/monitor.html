@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laptop CCTV Monitor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* Video fills entire window */
+    #remoteVideo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      /* maintain aspect ratio, crop if needed */
+      z-index: 1;
+      background: #000;
+    }
+
+    /* Status overlay */
+    #status {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 500;
+      z-index: 2;
+    }
+
+    /* Connect button overlay */
+    #joinBtn {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 32px;
+      font-size: 18px;
+      background: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 2;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #joinBtn:hover {
+      transform: translateX(-50%) scale(1.05);
+      box-shadow: 0 0 15px #4CAF50;
+    }
+
+    #joinBtn:disabled {
+      background: #2e7d32;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="status">Status: Connecting to server...</div>
+  <video id="remoteVideo" autoplay playsinline></video>
+  <button id="joinBtn">📺 CONNECT TO PHONE STREAM</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/simple-peer@9.11.0/simplepeer.min.js"></script>
+  <script>
+    const video = document.getElementById('remoteVideo');
+    const joinBtn = document.getElementById('joinBtn');
+    const statusEl = document.getElementById('status');
+
+    const socket = io();
+    let peer;
+
+    joinBtn.onclick = () => {
+      joinBtn.disabled = true;
+      statusEl.textContent = '📞 Requesting stream from phone...';
+
+      socket.emit('join');
+
+      socket.on('error', msg => {
+        statusEl.textContent = `❌ ${msg}`;
+        joinBtn.disabled = false;
+      });
+
+      socket.on('phoneDisconnected', () => {
+        statusEl.textContent = '📱 Phone disconnected';
+        if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+        joinBtn.disabled = false;
+      });
+
+      socket.on('signal', ({ signal }) => {
+        if (!peer) {
+          peer = new SimplePeer({ initiator: false, trickle: false });
+
+          peer.on('signal', data => {
+            socket.emit('signal', { to: 'initiator', signal: data });
+          });
+
+          peer.on('stream', remoteStream => {
+            video.srcObject = remoteStream;
+            statusEl.textContent = '✅ LIVE STREAM RECEIVED';
+          });
+
+          peer.on('error', err => {
+            statusEl.textContent = '❌ WebRTC Error';
+            console.error(err);
+          });
+        }
+        peer.signal(signal);
+      });
+    };
+  </script>
+
+</body>
+
+</html>
