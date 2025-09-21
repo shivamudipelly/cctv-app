@@ -4,7 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Laptop CCTV Monitor</title>
+  <title>Adaptive CCTV Monitor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * {
       margin: 0;
@@ -17,72 +18,332 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
-      font-family: 'Roboto', sans-serif;
-    }
-
-    /* Video fills entire window */
-    #remoteVideo {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      /* maintain aspect ratio, crop if needed */
-      z-index: 1;
-      background: #000;
-    }
-
-    /* Status overlay */
-    #status {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.6);
+      background: #111;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #fff;
-      padding: 10px 20px;
-      border-radius: 12px;
-      font-weight: 500;
-      z-index: 2;
     }
 
-    /* Connect button overlay */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #0a0a0a;
+    }
+
+    .header {
+      background: linear-gradient(to right, #1a1a1a, #0d0d0d);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2a2a2a;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo i {
+      color: #4CAF50;
+      font-size: 24px;
+    }
+
+    .logo h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    #status {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #333;
+    }
+
+    #status.connected {
+      color: #4CAF50;
+    }
+
+    #status.connecting {
+      color: #FFA000;
+    }
+
+    #status.error {
+      color: #F44336;
+    }
+
+    .video-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+    }
+
+    #remoteVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      transform-origin: center;
+      transition: transform 0.3s ease;
+    }
+
+    .video-overlay {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .overlay-btn {
+      background: #333;
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .overlay-btn:hover {
+      background: #444;
+      transform: scale(1.1);
+    }
+
+    .footer {
+      background: linear-gradient(to right, #1a1a1a, #0d0d0d);
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #2a2a2a;
+      flex-shrink: 0;
+    }
+
     #joinBtn {
-      position: fixed;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
       padding: 14px 32px;
-      font-size: 18px;
-      background: #4CAF50;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(to right, #4CAF50, #2E7D32);
       color: #fff;
       border: none;
-      border-radius: 12px;
+      border-radius: 30px;
       cursor: pointer;
-      z-index: 2;
-      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      transition: all 0.3s;
     }
 
     #joinBtn:hover {
-      transform: translateX(-50%) scale(1.05);
-      box-shadow: 0 0 15px #4CAF50;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
     }
 
     #joinBtn:disabled {
-      background: #2e7d32;
+      background: linear-gradient(to right, #2e7d32, #1b5e20);
       cursor: not-allowed;
+      transform: none;
       box-shadow: none;
+    }
+
+    #controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    .control-group {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 10px;
+      border-radius: 10px;
+      display: flex;
+      gap: 8px;
+      border: 1px solid #333;
+    }
+
+    .control-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #333;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .control-btn:hover {
+      background: #444;
+      transform: scale(1.05);
+    }
+
+    .control-btn:active {
+      transform: scale(0.95);
+    }
+
+    .aspect-ratio-info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .orientation-warning {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 80%;
+      display: none;
+      z-index: 20;
+    }
+
+    .orientation-warning i {
+      font-size: 32px;
+      color: #FFA000;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .footer {
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .control-group {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+
+      .orientation-warning {
+        display: block;
+      }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+      .header, .footer {
+        padding: 10px;
+      }
+      
+      #joinBtn {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
     }
   </style>
 </head>
 
 <body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <i class="fas fa-video"></i>
+        <h1>Adaptive CCTV Monitor</h1>
+      </div>
+      <div id="status" class="connecting">
+        <i class="fas fa-sync-alt fa-spin"></i>
+        <span>Connecting to server...</span>
+      </div>
+    </div>
+    
+    <div class="video-container">
+      <video id="remoteVideo" autoplay playsinline></video>
+      
+      <div class="video-overlay">
+        <button class="overlay-btn" id="fullscreenBtn">
+          <i class="fas fa-expand"></i>
+        </button>
+        <button class="overlay-btn" id="screenshotBtn">
+          <i class="fas fa-camera"></i>
+        </button>
+      </div>
+      
+      <div class="aspect-ratio-info">
+        <i class="fas fa-expand-arrows-alt"></i>
+        <span id="aspectRatio">Waiting for video...</span>
+      </div>
 
-  <div id="status">Status: Connecting to server...</div>
-  <video id="remoteVideo" autoplay playsinline></video>
-  <button id="joinBtn">📺 CONNECT TO PHONE STREAM</button>
+      <div class="orientation-warning">
+        <i class="fas fa-mobile-alt"></i>
+        <h3>Phone Orientation</h3>
+        <p>For best results, lock your phone in landscape mode</p>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <button id="joinBtn">
+        <i class="fas fa-plug"></i>
+        CONNECT TO PHONE STREAM
+      </button>
+      
+      <div id="controls">
+        <div class="control-group">
+          <button class="control-btn" id="zoomIn" title="Zoom In">
+            <i class="fas fa-search-plus"></i>
+          </button>
+          <button class="control-btn" id="zoomOut" title="Zoom Out">
+            <i class="fas fa-search-minus"></i>
+          </button>
+        </div>
+        
+        <div class="control-group">
+          <button class="control-btn" id="rotateLeft" title="Rotate Left">
+            <i class="fas fa-undo"></i>
+          </button>
+          <button class="control-btn" id="rotateRight" title="Rotate Right">
+            <i class="fas fa-redo"></i>
+          </button>
+        </div>
+        
+        <div class="control-group">
+          <button class="control-btn" id="reset" title="Reset View">
+            <i class="fas fa-sync"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://unpkg.com/simple-peer@9.11.0/simplepeer.min.js"></script>
@@ -90,51 +351,210 @@
     const video = document.getElementById('remoteVideo');
     const joinBtn = document.getElementById('joinBtn');
     const statusEl = document.getElementById('status');
+    const statusText = statusEl.querySelector('span');
+    const aspectRatioInfo = document.getElementById('aspectRatio');
+    
+    let scale = 1;
+    let rotate = 0;
+    let peer;
+    let streamActive = false;
+    let videoWidth = 0;
+    let videoHeight = 0;
+
+    // Apply video transformations
+    function applyTransform() {
+      video.style.transform = `scale(${scale}) rotate(${rotate}deg)`;
+    }
+
+    // Update aspect ratio info
+    function updateAspectRatioInfo() {
+      if (videoWidth && videoHeight) {
+        const ratio = (videoWidth / videoHeight).toFixed(2);
+        aspectRatioInfo.textContent = `${videoWidth}×${videoHeight} (${ratio}:1)`;
+      } else {
+        aspectRatioInfo.textContent = 'Waiting for video...';
+      }
+    }
+
+    // Initialize UI elements
+    function initUI() {
+      // Zoom controls
+      document.getElementById('zoomIn').onclick = () => {
+        scale *= 1.2;
+        applyTransform();
+      };
+
+      document.getElementById('zoomOut').onclick = () => {
+        scale /= 1.2;
+        if (scale < 0.5) scale = 0.5;
+        applyTransform();
+      };
+
+      // Rotation controls
+      document.getElementById('rotateLeft').onclick = () => {
+        rotate -= 90;
+        applyTransform();
+      };
+
+      document.getElementById('rotateRight').onclick = () => {
+        rotate += 90;
+        applyTransform();
+      };
+
+      // Reset view
+      document.getElementById('reset').onclick = () => {
+        scale = 1;
+        rotate = 0;
+        applyTransform();
+      };
+
+      // Fullscreen button
+      document.getElementById('fullscreenBtn').onclick = () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.error('Error attempting to enable fullscreen:', err);
+          });
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      };
+
+      // Screenshot button
+      document.getElementById('screenshotBtn').onclick = () => {
+        if (!streamActive) return;
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        
+        // Apply the same transformations as the video
+        ctx.save();
+        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.scale(scale, scale);
+        ctx.rotate(rotate * Math.PI/180);
+        ctx.translate(-canvas.width/2, -canvas.height/2);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        
+        const link = document.createElement('a');
+        link.download = 'cctv-screenshot-' + new Date().toISOString().replace(/:/g, '-') + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+    }
+
+    // Update status display
+    function updateStatus(status, message) {
+      statusEl.className = status;
+      statusText.textContent = message;
+      
+      // Update status icon
+      const icon = statusEl.querySelector('i');
+      icon.className = '';
+      
+      if (status === 'connecting') {
+        icon.className = 'fas fa-sync-alt fa-spin';
+      } else if (status === 'connected') {
+        icon.className = 'fas fa-check-circle';
+      } else if (status === 'error') {
+        icon.className = 'fas fa-exclamation-circle';
+      }
+    }
+
+    // Handle video metadata to get actual dimensions
+    video.addEventListener('loadedmetadata', function() {
+      videoWidth = video.videoWidth;
+      videoHeight = video.videoHeight;
+      updateAspectRatioInfo();
+      
+      // Log the video dimensions for debugging
+      console.log(`Video dimensions: ${videoWidth}x${videoHeight}`);
+    });
+
+    // Join logic
+    function setupConnection() {
+      joinBtn.onclick = () => {
+        joinBtn.disabled = true;
+        updateStatus('connecting', 'Requesting stream from phone...');
+
+        socket.emit('join');
+
+        socket.on('error', msg => {
+          updateStatus('error', msg);
+          joinBtn.disabled = false;
+        });
+
+        socket.on('waitingForPhone', () => {
+          updateStatus('connecting', 'Waiting for camera to connect...');
+          joinBtn.disabled = true;
+          setTimeout(() => {
+            socket.emit('join'); // Retry every 5s
+          }, 5000);
+        });
+
+        socket.on('phoneDisconnected', () => {
+          updateStatus('error', 'Phone disconnected');
+          streamActive = false;
+          if (video.srcObject) {
+            video.srcObject.getTracks().forEach(t => t.stop());
+            video.srcObject = null;
+          }
+          joinBtn.disabled = false;
+        });
+
+        socket.on('signal', ({ signal }) => {
+          if (!peer) {
+            peer = new SimplePeer({ initiator: false, trickle: false });
+
+            peer.on('signal', data => {
+              socket.emit('signal', { to: 'initiator', signal: data });
+            });
+
+            peer.on('stream', remoteStream => {
+              video.srcObject = remoteStream;
+              streamActive = true;
+              updateStatus('connected', 'LIVE STREAM RECEIVED');
+              
+              // Get video track information
+              const videoTrack = remoteStream.getVideoTracks()[0];
+              if (videoTrack) {
+                const settings = videoTrack.getSettings();
+                videoWidth = settings.width;
+                videoHeight = settings.height;
+                updateAspectRatioInfo();
+              }
+            });
+
+            peer.on('error', err => {
+              updateStatus('error', 'WebRTC Error');
+              console.error(err);
+            });
+          }
+          peer.signal(signal);
+        });
+      };
+    }
+
+    // Initialize the application
+    function initApp() {
+      initUI();
+      setupConnection();
+      updateStatus('connecting', 'Connecting to server...');
+      updateAspectRatioInfo();
+      
+      // Simulate connection to server
+      setTimeout(() => {
+        updateStatus('connected', 'Ready to connect');
+        joinBtn.disabled = false;
+      }, 1500);
+    }
 
     const socket = io();
-    let peer;
-
-    joinBtn.onclick = () => {
-      joinBtn.disabled = true;
-      statusEl.textContent = '📞 Requesting stream from phone...';
-
-      socket.emit('join');
-
-      socket.on('error', msg => {
-        statusEl.textContent = `❌ ${msg}`;
-        joinBtn.disabled = false;
-      });
-
-      socket.on('phoneDisconnected', () => {
-        statusEl.textContent = '📱 Phone disconnected';
-        if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-        video.srcObject = null;
-        joinBtn.disabled = false;
-      });
-
-      socket.on('signal', ({ signal }) => {
-        if (!peer) {
-          peer = new SimplePeer({ initiator: false, trickle: false });
-
-          peer.on('signal', data => {
-            socket.emit('signal', { to: 'initiator', signal: data });
-          });
-
-          peer.on('stream', remoteStream => {
-            video.srcObject = remoteStream;
-            statusEl.textContent = '✅ LIVE STREAM RECEIVED';
-          });
-
-          peer.on('error', err => {
-            statusEl.textContent = '❌ WebRTC Error';
-            console.error(err);
-          });
-        }
-        peer.signal(signal);
-      });
-    };
+    window.addEventListener('DOMContentLoaded', initApp);
   </script>
-
 </body>
 
 </html>
