@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adaptive CCTV Monitor</title>
+  <title>CCTV Monitor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * {
@@ -30,56 +30,6 @@
       background: #0a0a0a;
     }
 
-    .header {
-      background: linear-gradient(to right, #1a1a1a, #0d0d0d);
-      padding: 12px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #2a2a2a;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .logo i {
-      color: #4CAF50;
-      font-size: 20px;
-    }
-
-    .logo h1 {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    #status {
-      background: rgba(0, 0, 0, 0.4);
-      padding: 6px 12px;
-      border-radius: 18px;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border: 1px solid #333;
-    }
-
-    #status.connected {
-      color: #4CAF50;
-    }
-
-    #status.connecting {
-      color: #FFA000;
-    }
-
-    #status.error {
-      color: #F44336;
-    }
-
     .video-container {
       flex: 1;
       display: flex;
@@ -99,54 +49,84 @@
       transition: transform 0.3s ease;
     }
 
-    .video-overlay {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 8px;
-      border-radius: 8px;
+    /* Glass effect control panel */
+    .control-panel {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 16px;
       display: flex;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+    }
+
+    /* Status indicator */
+    .status-indicator {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
       gap: 8px;
-      z-index: 10;
-      opacity: 0.7;
-      transition: opacity 0.3s;
+      border: 1px solid #333;
+      z-index: 100;
     }
 
-    .video-overlay:hover {
-      opacity: 1;
+    .status-indicator.ready {
+      color: #4CAF50;
     }
 
-    .overlay-btn {
-      background: #333;
+    .status-indicator.connecting {
+      color: #FFA000;
+    }
+
+    .status-indicator.connected {
+      color: #4CAF50;
+    }
+
+    .status-indicator.error {
+      color: #F44336;
+    }
+
+    /* Glass effect buttons */
+    .glass-btn {
+      background: rgba(255, 255, 255, 0.1);
       border: none;
       color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
       transition: all 0.2s;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .overlay-btn:hover {
-      background: #444;
-      transform: scale(1.1);
+    .glass-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
     }
 
-    .footer {
-      background: linear-gradient(to right, #1a1a1a, #0d0d0d);
-      padding: 12px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-top: 1px solid #2a2a2a;
-      flex-shrink: 0;
-      gap: 15px;
+    .glass-btn:active {
+      transform: scale(0.95);
     }
 
+    /* Connect button */
     #joinBtn {
       padding: 12px 24px;
       font-size: 14px;
@@ -161,7 +141,6 @@
       gap: 8px;
       box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
       transition: all 0.3s;
-      flex-shrink: 0;
     }
 
     #joinBtn:hover {
@@ -176,110 +155,53 @@
       box-shadow: none;
     }
 
-    #controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .control-group {
-      background: rgba(0, 0, 0, 0.4);
-      padding: 8px;
-      border-radius: 10px;
-      display: flex;
-      gap: 6px;
-      border: 1px solid #333;
-    }
-
-    .control-btn {
-      width: 36px;
-      height: 36px;
+    /* Info panel */
+    .info-panel {
+      position: fixed;
+      bottom: 90px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
       border-radius: 8px;
-      background: #333;
-      border: none;
-      color: white;
-      font-size: 14px;
-      cursor: pointer;
+      font-size: 12px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
+      gap: 8px;
+      z-index: 90;
     }
 
-    .control-btn:hover {
-      background: #444;
-      transform: scale(1.05);
-    }
-
-    .control-btn:active {
-      transform: scale(0.95);
-    }
-
-    .connection-info {
+    /* Fullscreen overlay controls */
+    .fullscreen-controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
       display: flex;
-      align-items: center;
-      gap: 15px;
-      font-size: 13px;
-      opacity: 0.8;
+      gap: 8px;
+      z-index: 90;
     }
 
-    .info-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .info-icon {
-      font-size: 14px;
-    }
-
-    /* Collapse controls after some inactivity */
-    .footer.collapsed {
-      padding: 8px 15px;
-    }
-
-    .footer.collapsed #controls {
-      display: none;
-    }
-
-    .footer.collapsed .connection-info {
-      display: none;
-    }
-
-    /* Media queries for responsive design */
+    /* Responsive adjustments */
     @media (max-width: 768px) {
-      .footer {
-        flex-direction: column;
-        gap: 12px;
+      .control-panel {
+        bottom: 10px;
+        padding: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
       }
-      
-      .header {
-        padding: 10px 15px;
-      }
-      
-      .logo h1 {
-        font-size: 16px;
-      }
-      
-      #status {
-        font-size: 12px;
-      }
-    }
 
-    @media (max-height: 500px) and (orientation: landscape) {
-      .header, .footer {
-        padding: 8px 12px;
+      .glass-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
       }
-      
+
       #joinBtn {
-        padding: 8px 16px;
+        padding: 10px 16px;
         font-size: 12px;
-      }
-      
-      .control-btn {
-        width: 32px;
-        height: 32px;
+        order: -1;
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 8px;
       }
     }
   </style>
@@ -287,72 +209,52 @@
 
 <body>
   <div class="container">
-    <div class="header">
-      <div class="logo">
-        <i class="fas fa-video"></i>
-        <h1>Adaptive CCTV Monitor</h1>
-      </div>
-      <div id="status" class="connecting">
-        <i class="fas fa-sync-alt fa-spin"></i>
-        <span>Connecting to server...</span>
-      </div>
-    </div>
-    
     <div class="video-container">
       <video id="remoteVideo" autoplay playsinline></video>
-      
-      <div class="video-overlay">
-        <button class="overlay-btn" id="fullscreenBtn" title="Fullscreen">
+
+      <div class="status-indicator ready" id="status">
+        <i class="fas fa-check-circle"></i>
+        <span>Ready to connect</span>
+      </div>
+
+      <div class="fullscreen-controls">
+        <button class="glass-btn" id="fullscreenBtn" title="Fullscreen">
           <i class="fas fa-expand"></i>
         </button>
-        <button class="overlay-btn" id="screenshotBtn" title="Take Screenshot">
+        <button class="glass-btn" id="screenshotBtn" title="Take Screenshot">
           <i class="fas fa-camera"></i>
         </button>
       </div>
+
+      <div class="info-panel">
+        <i class="fas fa-expand-arrows-alt"></i>
+        <span id="aspectRatio">Waiting for video...</span>
+      </div>
     </div>
-    
-    <div class="footer" id="footer">
+
+    <div class="control-panel">
       <button id="joinBtn">
         <i class="fas fa-plug"></i>
-        CONNECT TO STREAM
+        CONNECT
       </button>
-      
-      <div id="controls">
-        <div class="control-group">
-          <button class="control-btn" id="zoomIn" title="Zoom In">
-            <i class="fas fa-search-plus"></i>
-          </button>
-          <button class="control-btn" id="zoomOut" title="Zoom Out">
-            <i class="fas fa-search-minus"></i>
-          </button>
-        </div>
-        
-        <div class="control-group">
-          <button class="control-btn" id="rotateLeft" title="Rotate Left">
-            <i class="fas fa-undo"></i>
-          </button>
-          <button class="control-btn" id="rotateRight" title="Rotate Right">
-            <i class="fas fa-redo"></i>
-          </button>
-        </div>
-        
-        <div class="control-group">
-          <button class="control-btn" id="reset" title="Reset View">
-            <i class="fas fa-sync"></i>
-          </button>
-        </div>
-      </div>
-      
-      <div class="connection-info">
-        <div class="info-item">
-          <i class="fas fa-expand-arrows-alt info-icon"></i>
-          <span id="aspectRatio">-</span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-wifi info-icon"></i>
-          <span id="connectionStatus">Offline</span>
-        </div>
-      </div>
+
+      <button class="glass-btn" id="zoomIn" title="Zoom In">
+        <i class="fas fa-search-plus"></i>
+      </button>
+      <button class="glass-btn" id="zoomOut" title="Zoom Out">
+        <i class="fas fa-search-minus"></i>
+      </button>
+
+      <button class="glass-btn" id="rotateLeft" title="Rotate Left">
+        <i class="fas fa-undo"></i>
+      </button>
+      <button class="glass-btn" id="rotateRight" title="Rotate Right">
+        <i class="fas fa-redo"></i>
+      </button>
+
+      <button class="glass-btn" id="reset" title="Reset View">
+        <i class="fas fa-sync"></i>
+      </button>
     </div>
   </div>
 
@@ -364,16 +266,15 @@
     const statusEl = document.getElementById('status');
     const statusText = statusEl.querySelector('span');
     const aspectRatioInfo = document.getElementById('aspectRatio');
-    const connectionStatus = document.getElementById('connectionStatus');
-    const footer = document.getElementById('footer');
-    
+
     let scale = 1;
     let rotate = 0;
-    let peer;
+    let peer = null;
     let streamActive = false;
     let videoWidth = 0;
     let videoHeight = 0;
-    let inactivityTimer;
+    let reconnectTimeout = null;
+    let signalHandler = null;
 
     // Apply video transformations
     function applyTransform() {
@@ -386,52 +287,92 @@
         const ratio = (videoWidth / videoHeight).toFixed(2);
         aspectRatioInfo.textContent = `${videoWidth}×${videoHeight} (${ratio}:1)`;
       } else {
-        aspectRatioInfo.textContent = '-';
+        aspectRatioInfo.textContent = 'Waiting for video...';
       }
     }
 
-    // Reset inactivity timer
-    function resetInactivityTimer() {
-      clearTimeout(inactivityTimer);
-      footer.classList.remove('collapsed');
+    // Update status display
+    function updateStatus(status, message) {
+      statusEl.className = `status-indicator ${status}`;
+      statusText.textContent = message;
+
+      // Update status icon
+      const icon = statusEl.querySelector('i');
+      icon.className = '';
+
+      if (status === 'ready') {
+        icon.className = 'fas fa-check-circle';
+      } else if (status === 'connecting') {
+        icon.className = 'fas fa-sync-alt fa-spin';
+      } else if (status === 'connected') {
+        icon.className = 'fas fa-broadcast-tower';
+      } else if (status === 'error') {
+        icon.className = 'fas fa-exclamation-circle';
+      }
+    }
+
+    // Reset connection state
+    function resetConnectionState() {
+      console.log("Resetting connection state");
       
-      inactivityTimer = setTimeout(() => {
-        footer.classList.add('collapsed');
-      }, 3000);
+      // Remove signal handler first to prevent further signaling
+      if (signalHandler) {
+        socket.off('signal', signalHandler);
+        signalHandler = null;
+      }
+      
+      if (peer) {
+        try {
+          // Remove all peer event listeners first
+          peer.removeAllListeners();
+          // Then destroy the peer
+          peer.destroy();
+        } catch (e) {
+          console.error('Error destroying peer:', e);
+        }
+        peer = null;
+      }
+      
+      streamActive = false;
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+      }
+      
+      joinBtn.disabled = false;
+      updateStatus('ready', 'Ready to connect');
+      updateAspectRatioInfo();
+      
+      // Clear any existing timeout
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
     }
 
     // Initialize UI elements
     function initUI() {
-      // Set up inactivity detection
-      document.addEventListener('mousemove', resetInactivityTimer);
-      document.addEventListener('keypress', resetInactivityTimer);
-      document.addEventListener('touchstart', resetInactivityTimer);
-      
       // Zoom controls
       document.getElementById('zoomIn').onclick = () => {
         scale *= 1.2;
         applyTransform();
-        resetInactivityTimer();
       };
 
       document.getElementById('zoomOut').onclick = () => {
         scale /= 1.2;
         if (scale < 0.5) scale = 0.5;
         applyTransform();
-        resetInactivityTimer();
       };
 
       // Rotation controls
       document.getElementById('rotateLeft').onclick = () => {
         rotate -= 90;
         applyTransform();
-        resetInactivityTimer();
       };
 
       document.getElementById('rotateRight').onclick = () => {
         rotate += 90;
         applyTransform();
-        resetInactivityTimer();
       };
 
       // Reset view
@@ -439,7 +380,6 @@
         scale = 1;
         rotate = 0;
         applyTransform();
-        resetInactivityTimer();
       };
 
       // Fullscreen button
@@ -453,130 +393,141 @@
             document.exitFullscreen();
           }
         }
-        resetInactivityTimer();
       };
 
       // Screenshot button
       document.getElementById('screenshotBtn').onclick = () => {
         if (!streamActive) return;
-        
+
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
-        
+
         // Apply the same transformations as the video
         ctx.save();
-        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.scale(scale, scale);
-        ctx.rotate(rotate * Math.PI/180);
-        ctx.translate(-canvas.width/2, -canvas.height/2);
+        ctx.rotate(rotate * Math.PI / 180);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         ctx.restore();
-        
+
         const link = document.createElement('a');
         link.download = 'cctv-screenshot-' + new Date().toISOString().replace(/:/g, '-') + '.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
-        resetInactivityTimer();
       };
     }
 
-    // Update status display
-    function updateStatus(status, message) {
-      statusEl.className = status;
-      statusText.textContent = message;
-      
-      // Update status icon
-      const icon = statusEl.querySelector('i');
-      icon.className = '';
-      
-      if (status === 'connecting') {
-        icon.className = 'fas fa-sync-alt fa-spin';
-        connectionStatus.textContent = 'Connecting';
-        connectionStatus.style.color = '#FFA000';
-      } else if (status === 'connected') {
-        icon.className = 'fas fa-check-circle';
-        connectionStatus.textContent = 'Live';
-        connectionStatus.style.color = '#4CAF50';
-      } else if (status === 'error') {
-        icon.className = 'fas fa-exclamation-circle';
-        connectionStatus.textContent = 'Error';
-        connectionStatus.style.color = '#F44336';
-      }
-    }
-
     // Handle video metadata to get actual dimensions
-    video.addEventListener('loadedmetadata', function() {
+    video.addEventListener('loadedmetadata', function () {
       videoWidth = video.videoWidth;
       videoHeight = video.videoHeight;
       updateAspectRatioInfo();
-      
-      // Log the video dimensions for debugging
-      console.log(`Video dimensions: ${videoWidth}x${videoHeight}`);
     });
+
+    // Setup peer connection
+    function setupPeer(monitorId) {
+      // Clean up any existing peer first
+      if (peer) {
+        resetConnectionState();
+      }
+      
+      peer = new SimplePeer({ initiator: false, trickle: false });
+
+      peer.on('signal', data => {
+        // Only send signals if peer is not destroyed
+        if (!peer.destroyed) {
+          socket.emit('signal', { to: 'initiator', signal: data });
+        }
+      });
+
+      peer.on('stream', remoteStream => {
+        video.srcObject = remoteStream;
+        streamActive = true;
+        updateStatus('connected', 'LIVE STREAM');
+        
+        // Get video track information
+        const videoTrack = remoteStream.getVideoTracks()[0];
+        if (videoTrack) {
+          const settings = videoTrack.getSettings();
+          videoWidth = settings.width;
+          videoHeight = settings.height;
+          updateAspectRatioInfo();
+        }
+      });
+
+      peer.on('close', () => {
+        console.log("Peer connection closed");
+        resetConnectionState();
+      });
+
+      peer.on('error', err => {
+        console.error('WebRTC error:', err);
+        resetConnectionState();
+      });
+      
+      return peer;
+    }
 
     // Join logic
     function setupConnection() {
       joinBtn.onclick = () => {
         joinBtn.disabled = true;
-        updateStatus('connecting', 'Requesting stream from phone...');
+        updateStatus('connecting', 'Requesting stream...');
 
         socket.emit('join');
 
-        socket.on('error', msg => {
+        socket.once('error', msg => {
           updateStatus('error', msg);
-          joinBtn.disabled = false;
+          // Instead of staying in error state, reset after a delay
+          setTimeout(resetConnectionState, 3000);
         });
 
-        socket.on('waitingForPhone', () => {
-          updateStatus('connecting', 'Waiting for camera to connect...');
+        socket.once('waitingForPhone', () => {
+          updateStatus('connecting', 'Waiting for camera...');
           joinBtn.disabled = true;
-          setTimeout(() => {
-            socket.emit('join'); // Retry every 5s
+          
+          // Clear any previous timeout
+          if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+          }
+          
+          // Set a new timeout to retry
+          reconnectTimeout = setTimeout(() => {
+            socket.emit('join');
           }, 5000);
         });
 
-        socket.on('phoneDisconnected', () => {
-          updateStatus('error', 'Phone disconnected');
-          streamActive = false;
-          if (video.srcObject) {
-            video.srcObject.getTracks().forEach(t => t.stop());
-            video.srcObject = null;
-          }
-          joinBtn.disabled = false;
+        socket.once('phoneDisconnected', () => {
+          console.log("Phone disconnected event received");
+          resetConnectionState();
         });
 
-        socket.on('signal', ({ signal }) => {
+        // Create a new signal handler
+        signalHandler = ({ signal }) => {
           if (!peer) {
-            peer = new SimplePeer({ initiator: false, trickle: false });
-
-            peer.on('signal', data => {
-              socket.emit('signal', { to: 'initiator', signal: data });
-            });
-
-            peer.on('stream', remoteStream => {
-              video.srcObject = remoteStream;
-              streamActive = true;
-              updateStatus('connected', 'LIVE STREAM RECEIVED');
-              
-              // Get video track information
-              const videoTrack = remoteStream.getVideoTracks()[0];
-              if (videoTrack) {
-                const settings = videoTrack.getSettings();
-                videoWidth = settings.width;
-                videoHeight = settings.height;
-                updateAspectRatioInfo();
-              }
-            });
-
-            peer.on('error', err => {
-              updateStatus('error', 'WebRTC Error');
-              console.error(err);
-            });
+            setupPeer();
           }
-          peer.signal(signal);
-        });
+          
+          // Only signal if peer exists and isn't destroyed
+          if (peer && !peer.destroyed) {
+            try {
+              peer.signal(signal);
+            } catch (e) {
+              if (e.message.includes('cannot signal after peer is destroyed')) {
+                console.log('Ignoring signal for destroyed peer');
+              } else {
+                console.error('Error signaling peer:', e);
+                resetConnectionState();
+              }
+            }
+          }
+        };
+        
+        // Attach the signal handler
+        socket.on('signal', signalHandler);
       };
     }
 
@@ -584,17 +535,10 @@
     function initApp() {
       initUI();
       setupConnection();
-      updateStatus('connecting', 'Connecting to server...');
+      
+      // Start with ready state
+      updateStatus('ready', 'Ready to connect');
       updateAspectRatioInfo();
-      
-      // Start inactivity timer
-      resetInactivityTimer();
-      
-      // Simulate connection to server
-      setTimeout(() => {
-        updateStatus('connected', 'Ready to connect');
-        joinBtn.disabled = false;
-      }, 1500);
     }
 
     const socket = io();

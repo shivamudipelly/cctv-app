@@ -42,29 +42,28 @@
       left: 0;
       width: 100%;
       height: 100%;
+      background: rgba(10, 14, 23, 0.5);
+      backdrop-filter: blur(5px);
       z-index: 2;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
       padding: 20px;
-      pointer-events: none;
     }
 
-    .top-bar {
+    .header {
       width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 12px 16px;
       background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      pointer-events: auto;
+      border-radius: 12px;
     }
 
     .logo {
-      font-weight: 700;
+      font-weight: 600;
       font-size: 18px;
       display: flex;
       align-items: center;
@@ -85,6 +84,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      font-size: 14px;
     }
 
     .status-indicator {
@@ -108,17 +108,18 @@
       animation: pulse 1.5s infinite;
     }
 
-    .center-controls {
+    .controls {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 15px;
-      pointer-events: auto;
+      gap: 20px;
+      width: 100%;
+      max-width: 300px;
     }
 
     #startBtn {
-      width: 80px;
-      height: 80px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.9);
       border: none;
@@ -147,55 +148,81 @@
     }
 
     .btn-icon {
-      font-size: 30px;
+      font-size: 28px;
       color: #4361ee;
     }
 
-    .bottom-bar {
-      width: 100%;
+    .sleep-mode {
       display: flex;
-      justify-content: center;
-      padding: 15px;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      pointer-events: auto;
-    }
-
-    .connection-info {
-      display: flex;
-      gap: 20px;
-    }
-
-    .info-item {
-      display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      gap: 4px;
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
     }
 
-    .info-icon {
-      font-size: 20px;
-      opacity: 0.8;
+    .sleep-mode-text {
+      font-weight: 500;
+      font-size: 14px;
     }
 
-    .info-value {
-      font-weight: 600;
-      font-size: 16px;
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #4361ee;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .footer {
+      font-size: 12px;
+      opacity: 0.7;
+      text-align: center;
+      margin-top: 10px;
     }
 
     @keyframes pulse {
-      0% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.6;
-      }
-
-      100% {
-        opacity: 1;
-      }
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
     }
 
     /* Portrait mode adjustments */
@@ -203,14 +230,14 @@
       .overlay {
         padding: 15px;
       }
-
+      
       #startBtn {
-        width: 70px;
-        height: 70px;
+        width: 60px;
+        height: 60px;
       }
-
+      
       .btn-icon {
-        font-size: 25px;
+        font-size: 24px;
       }
     }
   </style>
@@ -218,9 +245,9 @@
 
 <body>
   <video id="localVideo" autoplay playsinline muted></video>
-
+  
   <div class="overlay">
-    <div class="top-bar">
+    <div class="header">
       <div class="logo">
         <div class="logo-icon">
           <i class="fas fa-video"></i>
@@ -232,11 +259,23 @@
         <span>Ready</span>
       </div>
     </div>
-
-    <div class="center-controls">
+    
+    <div class="controls">
       <button id="startBtn">
         <span class="btn-icon"><i class="fas fa-satellite-dish"></i></span>
       </button>
+      
+      <div class="sleep-mode">
+        <div class="sleep-mode-text">Background Mode</div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="sleepModeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <i class="fas fa-lock"></i> Secure Stream
     </div>
   </div>
 
@@ -248,21 +287,44 @@
     const statusEl = document.getElementById('status');
     const statusIndicator = document.querySelector('.status-indicator');
     const statusText = statusEl.querySelector('span');
-    const bitrateEl = document.getElementById('bitrate');
-    const frameRateEl = document.getElementById('frameRate');
+    const sleepModeToggle = document.getElementById('sleepModeToggle');
+    const overlay = document.querySelector('.overlay');
 
     const socket = io();
     let peer;
     let stream;
-    let bitrateInterval;
+    let wakeLock = null;
+
+    // Request wake lock to prevent screen from sleeping
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('Wake Lock is active');
+          
+          wakeLock.addEventListener('release', () => {
+            console.log('Wake Lock was released');
+          });
+        }
+      } catch (err) {
+        console.error('Failed to get wake lock:', err);
+      }
+    }
+
+    // Handle visibility change
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && wakeLock === null && sleepModeToggle.checked) {
+        await requestWakeLock();
+      }
+    });
 
     async function startCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: 'environment',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
             frameRate: { ideal: 30, max: 30 }
           },
           audio: false
@@ -270,7 +332,7 @@
         video.srcObject = stream;
         updateStatus('ready', 'Ready');
       } catch (err) {
-        updateStatus('error', 'Error');
+        updateStatus('error', 'Camera Error');
         console.error(err);
       }
     }
@@ -278,8 +340,8 @@
     function updateStatus(status, text) {
       statusIndicator.className = 'status-indicator';
       statusText.textContent = text;
-
-      switch (status) {
+      
+      switch(status) {
         case 'ready':
           statusIndicator.classList.add('ready');
           break;
@@ -295,38 +357,29 @@
       }
     }
 
-    function measureBitrate() {
-      if (bitrateInterval) clearInterval(bitrateInterval);
-
-      let lastBytes = 0;
-      const peerConnection = peer._pc;
-
-      bitrateInterval = setInterval(() => {
-        if (!peerConnection || !peerConnection.getSenders) return;
-
-        peerConnection.getSenders().then(senders => {
-          senders.forEach(sender => {
-            if (sender.getStats) {
-              sender.getStats().then(stats => {
-                stats.forEach(report => {
-                  if (report.type === 'outbound-rtp' && report.mediaType === 'video') {
-                    const bytes = report.bytesSent;
-                    const bits = (bytes - lastBytes) * 8;
-                    const kbps = (bits / 1000).toFixed(0);
-
-                    if (lastBytes > 0) {
-                      bitrateEl.textContent = kbps;
-                    }
-
-                    lastBytes = bytes;
-                  }
-                });
-              });
-            }
-          });
-        });
-      }, 1000);
-    }
+    // Toggle sleep mode
+    sleepModeToggle.addEventListener('change', function() {
+      if (this.checked) {
+        // Enable sleep mode
+        requestWakeLock();
+        overlay.style.opacity = '0.3';
+        
+        // Hide UI after a delay
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 1000);
+      } else {
+        // Disable sleep mode
+        if (wakeLock !== null) {
+          wakeLock.release();
+          wakeLock = null;
+        }
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+          overlay.style.opacity = '1';
+        }, 50);
+      }
+    });
 
     startBtn.onclick = async () => {
       if (!stream) await startCamera();
@@ -363,13 +416,11 @@
         peer.on('connect', () => {
           updateStatus('connected', 'Live');
           startBtn.innerHTML = '<span class="btn-icon"><i class="fas fa-broadcast-tower"></i></span>';
-          measureBitrate();
         });
 
         peer.on('error', err => {
           updateStatus('error', 'Error');
           console.error(err);
-          if (bitrateInterval) clearInterval(bitrateInterval);
         });
       });
 
