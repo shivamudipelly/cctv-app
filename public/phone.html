@@ -196,6 +196,23 @@
         .stat-value.quality { color: var(--success); }
         .stat-value.duration { color: var(--warning); }
 
+        /* Camera Selection */
+        .camera-select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: var(--dark);
+            border: 1px solid var(--border);
+            color: white;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .camera-select option {
+            background: var(--card-bg);
+            color: white;
+        }
+
         /* Controls */
         .controls {
             display: flex;
@@ -404,6 +421,11 @@
             .action-btn {
                 min-width: 100%;
             }
+            
+            .camera-select {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -533,6 +555,9 @@
                 <div class="video-container">
                     <video id="localVideo" autoplay playsinline muted></video>
                     <div class="video-controls">
+                        <button class="control-btn" id="switchCameraBtn" title="Switch Camera">
+                            <i class="fas fa-camera-rotate"></i>
+                        </button>
                         <button class="control-btn" id="toggleVideoBtn" title="Toggle Video Preview">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -558,6 +583,14 @@
                 <div class="stat-card">
                     <div class="stat-title">Stream Duration</div>
                     <div class="stat-value duration" id="durationInfo">00:00:00</div>
+                </div>
+
+                <!-- Camera Selection -->
+                <div class="stat-card">
+                    <div class="stat-title">Camera Selection</div>
+                    <select id="cameraSelect" class="camera-select">
+                        <option value="">Loading cameras...</option>
+                    </select>
                 </div>
 
                 <!-- Controls -->
@@ -617,6 +650,8 @@
         const durationInfo = document.getElementById('durationInfo');
         const toggleVideoBtn = document.getElementById('toggleVideoBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const switchCameraBtn = document.getElementById('switchCameraBtn');
+        const cameraSelect = document.getElementById('cameraSelect');
         const whatsappShare = document.getElementById('whatsappShare');
         const copyShare = document.getElementById('copyShare');
         const toast = document.getElementById('toast');
@@ -632,6 +667,10 @@
         let isStreaming = false;
         let streamStartTime = null;
         let durationInterval = null;
+        
+        // Camera management variables
+        let availableCameras = [];
+        let currentCameraIndex = 0;
 
         // Show toast message
         function showToast(message, type = 'info') {
@@ -686,31 +725,160 @@
             return { width: 854, height: 480, label: '480p SD' };
         }
 
-        // Start camera
-        async function startCamera() {
+        // Get available cameras
+        async function getCameras() {
             try {
-                const quality = await getBestQualitySettings();
+                // First get permission by accessing any camera
+                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                // Now we can enumerate devices with proper permissions
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                // Stop the temporary stream
+                tempStream.getTracks().forEach(track => track.stop());
+                
+                return videoDevices;
+            } catch (err) {
+                console.error('Error getting cameras:', err);
+                return [];
+            }
+        }
+
+        // Populate camera selection dropdown
+        async function populateCameraSelect() {
+            availableCameras = await getCameras();
+            cameraSelect.innerHTML = '';
+            
+            if (availableCameras.length === 0) {
+                cameraSelect.innerHTML = '<option value="">No cameras found</option>';
+                return;
+            }
+            
+            availableCameras.forEach((camera, index) => {
+                const option = document.createElement('option');
+                option.value = camera.deviceId;
+                option.text = camera.label || `Camera ${index + 1}`;
+                cameraSelect.appendChild(option);
+            });
+            
+            // Select first camera by default
+            if (availableCameras.length > 0) {
+                cameraSelect.value = availableCameras[0].deviceId;
+            }
+        }
+
+        // Set specific camera
+        async function setCamera(deviceId) {
+            try {
+                // Stop current stream
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
                 
                 const constraints = {
                     video: {
-                        width: { ideal: quality.width },
-                        height: { ideal: quality.height },
+                        deviceId: { exact: deviceId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
                         frameRate: { ideal: 24 }
                     },
                     audio: false
                 };
-
+                
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
-                updateStatus('ready', 'READY');
-                console.log('📹 Camera started successfully');
+                
+                // Update all active peer connections with the new stream
+                updateAllPeers(stream);
+                
+                const camera = availableCameras.find(cam => cam.deviceId === deviceId);
+                showToast(`Switched to: ${camera?.label || 'Camera ' + (currentCameraIndex + 1)}`);
+                
+            } catch (err) {
+                console.error('Error switching camera:', err);
+                showToast('Failed to switch camera', 'error');
+            }
+        }
+
+        // Update all peer connections with new stream
+        function updateAllPeers(newStream) {
+            peers.forEach((peer, monitorId) => {
+                const videoTrack = newStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    peer.replaceTrack(videoTrack, newStream);
+                }
+            });
+        }
+
+        // Switch camera
+        async function switchCamera() {
+            if (!availableCameras.length) {
+                availableCameras = await getCameras();
+                if (!availableCameras.length) {
+                    showToast('No cameras found', 'error');
+                    return;
+                }
+            }
+            
+            // Cycle to next camera
+            currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+            await setCamera(availableCameras[currentCameraIndex].deviceId);
+        }
+
+        // Start back camera (for CCTV)
+        async function startBackCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: { exact: "environment" }, // Back camera
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 24 }
+                    },
+                    audio: false
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
                 return true;
             } catch (err) {
-                console.error('❌ Camera error:', err);
-                updateStatus('error', 'CAMERA ERROR');
-                showToast('Cannot access camera. Please check permissions.', 'error');
+                console.log('Back camera not available, trying any camera:', err);
+                // Fallback to any camera
+                return startAnyCamera();
+            }
+        }
+
+        // Start any camera
+        async function startAnyCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 24 }
+                    },
+                    audio: false
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                return true;
+            } catch (err) {
+                console.error('No camera available:', err);
+                showToast('Cannot access any camera', 'error');
                 return false;
             }
+        }
+
+        // Start camera
+        async function startCamera() {
+            // Try back camera first for CCTV, fallback to any camera
+            const success = await startBackCamera();
+            if (success) {
+                await populateCameraSelect(); // Load available cameras
+            }
+            return success;
         }
 
         // Update status
@@ -929,6 +1097,13 @@
             console.error('❌ Socket error:', error);
             showToast('Connection error occurred', 'error');
             stopStreaming();
+        });
+
+        // Camera selection event handlers
+        switchCameraBtn.addEventListener('click', switchCamera);
+
+        cameraSelect.addEventListener('change', (e) => {
+            setCamera(e.target.value);
         });
 
         // Share functionality
