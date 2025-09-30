@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,6 +40,7 @@
             height: auto;
             object-fit: contain;
             transform: scaleX(-1);
+            transition: transform 0.3s ease;
         }
 
         .status-overlay {
@@ -213,15 +215,94 @@
             max-width: 300px;
         }
 
+        /* Control buttons container */
+        .control-buttons {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        /* Control button styles */
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+
+        .control-btn.active {
+            background: rgba(37, 99, 235, 0.8);
+            border-color: rgba(37, 99, 235, 0.8);
+        }
+
+        .control-btn.active:hover {
+            background: rgba(37, 99, 235, 0.9);
+        }
+
+        /* Rotate button specific styles */
+        .rotate-btn {
+            position: relative;
+        }
+
+        .rotate-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            color: black;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         /* Mobile optimizations */
@@ -268,6 +349,17 @@
             .start-subtext {
                 font-size: 14px;
             }
+
+            .control-buttons {
+                bottom: 15px;
+                right: 15px;
+            }
+
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -296,6 +388,23 @@
             .start-subtext {
                 font-size: 13px;
             }
+
+            .control-buttons {
+                bottom: 10px;
+                right: 10px;
+            }
+
+            .control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .rotate-indicator {
+                width: 14px;
+                height: 14px;
+                font-size: 9px;
+            }
         }
     </style>
 </head>
@@ -319,7 +428,8 @@
         <div class="error-screen" id="errorScreen">
             <div class="error-icon">📡</div>
             <div class="error-title">Stream Unavailable</div>
-            <div class="error-message" id="errorMessage">The stream is currently offline or the room code is invalid</div>
+            <div class="error-message" id="errorMessage">The stream is currently offline or the room code is invalid
+            </div>
             <button class="retry-btn" onclick="retryConnection()">
                 Retry Connection
             </button>
@@ -338,12 +448,24 @@
         <div class="room-code-display" id="roomCodeDisplay">
             Room: <span id="roomCodeText">000000</span>
         </div>
+
+        <!-- Control Buttons -->
+        <div class="control-buttons" id="controlButtons" style="display: none;">
+            <button class="control-btn rotate-btn" id="rotateBtn" title="Rotate Video">
+                🔄
+                <div class="rotate-indicator" id="rotateIndicator">0</div>
+            </button>
+            <button class="control-btn" id="mirrorBtn" title="Toggle Mirror">
+                <i class="fas fa-exchange-alt"></i>
+            </button>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.0/simplepeer.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
-        // Simplified CCTV Viewer with Mirroring Only
+        // Simplified CCTV Viewer with Mirroring and Rotation
         const socket = io();
         let peer = null;
         let roomCode = null;
@@ -353,6 +475,10 @@
         let isConnected = false;
         let isStreamReady = false;
         let userInteracted = false;
+
+        // Video transform state
+        let isMirrored = true; // Default to mirrored view
+        let rotationAngle = 0; // 0, 90, 180, 270 degrees
 
         // DOM Elements
         const loadingScreen = document.getElementById('loadingScreen');
@@ -366,10 +492,49 @@
         const roomCodeDisplay = document.getElementById('roomCodeDisplay');
         const roomCodeText = document.getElementById('roomCodeText');
         const clickToStart = document.getElementById('clickToStart');
+        const controlButtons = document.getElementById('controlButtons');
+        const mirrorBtn = document.getElementById('mirrorBtn');
+        const rotateBtn = document.getElementById('rotateBtn');
+        const rotateIndicator = document.getElementById('rotateIndicator');
 
         // Debug logging function
         function debugLog(message) {
             console.log(`[VIEWER] ${message}`);
+        }
+
+        // Apply video transformations - SIMPLE WORKING VERSION
+        function applyVideoTransform() {
+            let transform = '';
+
+            // 1. Always apply mirror first
+            if (isMirrored) {
+                transform = 'scaleX(-1)';
+            } else {
+                transform = 'scaleX(1)';
+            }
+
+            // 2. Then apply rotation
+            if (rotationAngle === 90) {
+                transform += ' rotate(90deg)';
+            } else if (rotationAngle === 180) {
+                transform += ' rotate(180deg)';
+            } else if (rotationAngle === 270) {
+                transform += ' rotate(270deg)';
+            }
+
+            // 3. Apply the combined transform
+            remoteVideo.style.transform = transform;
+        }
+        // Toggle mirror function
+        function toggleMirror() {
+            isMirrored = !isMirrored;
+            applyVideoTransform();
+        }
+
+        // Rotate video function
+        function rotateVideo() {
+            rotationAngle = (rotationAngle + 90) % 360;
+            applyVideoTransform();
         }
 
         // User interaction handler
@@ -377,10 +542,10 @@
             if (!userInteracted) {
                 userInteracted = true;
                 debugLog('User interaction detected');
-                
+
                 // Hide click to start overlay
                 clickToStart.style.display = 'none';
-                
+
                 // If stream is ready, start playing
                 if (isStreamReady && remoteVideo.srcObject) {
                     debugLog('Starting video playback after user interaction');
@@ -425,6 +590,7 @@
             statusOverlay.style.display = 'flex';
             roomCodeDisplay.style.display = 'block';
             clickToStart.style.display = 'none';
+            controlButtons.style.display = 'none'; // Hide control buttons during loading
             updateStatus('connecting', 'Connecting...');
             loadingText.textContent = 'Connecting to stream...';
 
@@ -494,7 +660,7 @@
 
         function setupPeerConnection() {
             debugLog('Setting up WebRTC peer connection');
-            
+
             // Cleanup existing peer
             if (peer) {
                 debugLog('Cleaning up existing peer connection');
@@ -533,7 +699,7 @@
 
             peer.on('stream', (remoteStream) => {
                 debugLog('Stream received from peer!');
-                
+
                 // Set the stream to video element (muted by default)
                 remoteVideo.srcObject = remoteStream;
                 isStreamReady = true;
@@ -546,11 +712,15 @@
 
                 remoteVideo.onloadedmetadata = () => {
                     debugLog('Video metadata loaded');
-                    
+
                     // Show video and hide loading screen
                     remoteVideo.style.display = 'block';
                     loadingScreen.style.display = 'none';
-                    
+
+                    // Show control buttons
+                    controlButtons.style.display = 'flex';
+                    applyVideoTransform(); // Apply initial transform
+
                     // Show click-to-start overlay since we need user interaction
                     if (!userInteracted) {
                         clickToStart.style.display = 'flex';
@@ -633,6 +803,7 @@
             roomCodeDisplay.style.display = 'none';
             remoteVideo.style.display = 'none';
             clickToStart.style.display = 'none';
+            controlButtons.style.display = 'none'; // Hide control buttons on error
             isConnected = false;
         }
 
@@ -645,7 +816,7 @@
             } else if (status === 'connected') {
                 statusDot.classList.add('connected');
             }
-            
+
             debugLog(`Status update: ${status} - ${text}`);
         }
 
@@ -684,6 +855,10 @@
             socket.off('disconnect');
             socket.off('connect_error');
         }
+
+        // Event listeners for control buttons
+        mirrorBtn.addEventListener('click', toggleMirror);
+        rotateBtn.addEventListener('click', rotateVideo);
 
         // Event Listeners for User Interaction
         document.addEventListener('click', handleUserInteraction);
@@ -736,4 +911,5 @@
         debugLog(`Socket.io connected: ${socket.connected}`);
     </script>
 </body>
+
 </html>
