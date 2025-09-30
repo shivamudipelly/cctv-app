@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV Live Stream</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-container {
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #remoteVideo {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            transform: scaleX(-1);
+        }
+
+        .status-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc2626;
+        }
+
+        .status-dot.connecting {
+            background: #f59e0b;
+        }
+
+        .status-dot.connected {
+            background: #16a34a;
+        }
+
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            z-index: 5;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+
+        .error-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            z-index: 15;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .error-icon {
+            font-size: 64px;
+            color: #dc2626;
+            margin-bottom: 10px;
+        }
+
+        .error-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            color: #94a3b8;
+            font-size: 16px;
+            line-height: 1.5;
+            max-width: 400px;
+        }
+
+        .retry-btn {
+            padding: 14px 28px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .retry-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .room-code-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            z-index: 10;
+        }
+
+        .click-to-start {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 30;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .click-to-start:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .start-icon {
+            font-size: 64px;
+            color: #2563eb;
+            animation: pulse 2s infinite;
+        }
+
+        .start-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+        }
+
+        .start-subtext {
+            font-size: 16px;
+            color: #94a3b8;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .status-overlay {
+                top: 15px;
+                left: 15px;
+                font-size: 13px;
+                padding: 10px 15px;
+            }
+
+            .room-code-display {
+                top: 15px;
+                right: 15px;
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+            }
+
+            .loading-text {
+                font-size: 16px;
+            }
+
+            .error-title {
+                font-size: 20px;
+            }
+
+            .error-message {
+                font-size: 14px;
+            }
+
+            .start-icon {
+                font-size: 48px;
+            }
+
+            .start-text {
+                font-size: 20px;
+            }
+
+            .start-subtext {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .status-overlay {
+                top: 10px;
+                left: 10px;
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .room-code-display {
+                top: 10px;
+                right: 10px;
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+
+            .start-icon {
+                font-size: 40px;
+            }
+
+            .start-text {
+                font-size: 18px;
+            }
+
+            .start-subtext {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="video-container">
+        <!-- Click to Start Overlay -->
+        <div class="click-to-start" id="clickToStart">
+            <div class="start-icon">▶️</div>
+            <div class="start-text">Click to Start Stream</div>
+            <div class="start-subtext">Stream is ready. Click anywhere to begin watching.</div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Connecting to stream...</div>
+        </div>
+
+        <!-- Error Screen -->
+        <div class="error-screen" id="errorScreen">
+            <div class="error-icon">📡</div>
+            <div class="error-title">Stream Unavailable</div>
+            <div class="error-message" id="errorMessage">The stream is currently offline or the room code is invalid</div>
+            <button class="retry-btn" onclick="retryConnection()">
+                Retry Connection
+            </button>
+        </div>
+
+        <!-- Video Element -->
+        <video id="remoteVideo" autoplay playsinline muted style="display: none;"></video>
+
+        <!-- Status Overlay -->
+        <div class="status-overlay" id="statusOverlay" style="display: none;">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Connecting...</span>
+        </div>
+
+        <!-- Room Code Display -->
+        <div class="room-code-display" id="roomCodeDisplay">
+            Room: <span id="roomCodeText">000000</span>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/simple-peer@9.11.0/simplepeer.min.js"></script>
+    <script>
+        // Simplified CCTV Viewer with Mirroring Only
+        const socket = io();
+        let peer = null;
+        let roomCode = null;
+        let connectionAttempts = 0;
+        const MAX_RETRIES = 3;
+        let retryTimeout = null;
+        let isConnected = false;
+        let isStreamReady = false;
+        let userInteracted = false;
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loadingText = document.getElementById('loadingText');
+        const errorScreen = document.getElementById('errorScreen');
+        const errorMessage = document.getElementById('errorMessage');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const statusOverlay = document.getElementById('statusOverlay');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+        const roomCodeText = document.getElementById('roomCodeText');
+        const clickToStart = document.getElementById('clickToStart');
+
+        // Debug logging function
+        function debugLog(message) {
+            console.log(`[VIEWER] ${message}`);
+        }
+
+        // User interaction handler
+        function handleUserInteraction() {
+            if (!userInteracted) {
+                userInteracted = true;
+                debugLog('User interaction detected');
+                
+                // Hide click to start overlay
+                clickToStart.style.display = 'none';
+                
+                // If stream is ready, start playing
+                if (isStreamReady && remoteVideo.srcObject) {
+                    debugLog('Starting video playback after user interaction');
+                    remoteVideo.play().catch(e => {
+                        debugLog(`Play failed after interaction: ${e}`);
+                    });
+                }
+            }
+        }
+
+        // Get room code from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoomCode = urlParams.get('room');
+
+        debugLog(`URL Parameters: ${window.location.search}`);
+        debugLog(`Extracted Room Code: ${urlRoomCode}`);
+
+        // Initialize connection
+        if (urlRoomCode && urlRoomCode.length === 6) {
+            roomCode = urlRoomCode;
+            roomCodeText.textContent = roomCode;
+            debugLog(`Valid room code: ${roomCode}`);
+            initializeConnection();
+        } else {
+            debugLog(`Invalid room code: ${urlRoomCode}`);
+            showError('Invalid room code. Please check the URL and try again.');
+        }
+
+        function initializeConnection() {
+            connectionAttempts = 0;
+            debugLog(`Initializing connection (Attempt ${connectionAttempts + 1})`);
+            setupSocketConnection();
+        }
+
+        function setupSocketConnection() {
+            connectionAttempts++;
+            debugLog(`Connection attempt ${connectionAttempts} of ${MAX_RETRIES}`);
+
+            // Show loading state
+            loadingScreen.style.display = 'flex';
+            errorScreen.style.display = 'none';
+            statusOverlay.style.display = 'flex';
+            roomCodeDisplay.style.display = 'block';
+            clickToStart.style.display = 'none';
+            updateStatus('connecting', 'Connecting...');
+            loadingText.textContent = 'Connecting to stream...';
+
+            // Setup socket with proper cleanup
+            cleanupSocket();
+
+            socket.on('connect', () => {
+                debugLog('Socket connected to server');
+                debugLog(`Joining room: ${roomCode}`);
+                loadingText.textContent = 'Joining stream...';
+                socket.emit('join-room', roomCode);
+            });
+
+            socket.on('room-joined', (data) => {
+                debugLog('Successfully joined room');
+                loadingText.textContent = 'Setting up video stream...';
+                updateStatus('connecting', 'Setting up video...');
+                setupPeerConnection();
+            });
+
+            socket.on('room-not-found', (data) => {
+                debugLog(`Room not found: ${JSON.stringify(data)}`);
+                handleConnectionError('Stream room not found');
+            });
+
+            socket.on('error', (msg) => {
+                debugLog(`Socket error: ${msg}`);
+                handleConnectionError('Stream not found or offline');
+            });
+
+            socket.on('signal', (data) => {
+                debugLog(`Received signal from: ${data.from}`);
+                if (peer && !peer.destroyed) {
+                    try {
+                        peer.signal(data.signal);
+                    } catch (e) {
+                        debugLog(`Signaling error: ${e}`);
+                    }
+                }
+            });
+
+            socket.on('phone-disconnected', () => {
+                debugLog('Stream ended by broadcaster');
+                handleConnectionError('Stream ended by broadcaster');
+            });
+
+            socket.on('disconnect', (reason) => {
+                debugLog(`Socket disconnected: ${reason}`);
+                if (!isConnected) {
+                    handleConnectionError('Connection lost');
+                }
+            });
+
+            socket.on('connect_error', (error) => {
+                debugLog(`Socket connection error: ${error}`);
+            });
+
+            // Connect socket
+            if (socket.disconnected) {
+                debugLog('Connecting socket...');
+                socket.connect();
+            } else {
+                debugLog('Socket already connected, joining room...');
+                socket.emit('join-room', roomCode);
+            }
+        }
+
+        function setupPeerConnection() {
+            debugLog('Setting up WebRTC peer connection');
+            
+            // Cleanup existing peer
+            if (peer) {
+                debugLog('Cleaning up existing peer connection');
+                peer.destroy();
+                peer = null;
+            }
+
+            peer = new SimplePeer({
+                initiator: false,
+                trickle: false,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' }
+                    ]
+                }
+            });
+
+            peer.on('signal', (data) => {
+                debugLog(`Sending signal to phone`);
+                socket.emit('signal', {
+                    roomCode: roomCode,
+                    target: 'phone',
+                    signal: data
+                });
+            });
+
+            peer.on('connect', () => {
+                debugLog('WebRTC peer connection established');
+                isConnected = true;
+                connectionAttempts = 0;
+                updateStatus('connected', 'LIVE');
+            });
+
+            peer.on('stream', (remoteStream) => {
+                debugLog('Stream received from peer!');
+                
+                // Set the stream to video element (muted by default)
+                remoteVideo.srcObject = remoteStream;
+                isStreamReady = true;
+
+                // Handle video events
+                remoteVideo.onerror = (e) => {
+                    debugLog(`Video stream error: ${e}`);
+                    handleConnectionError('Video stream error');
+                };
+
+                remoteVideo.onloadedmetadata = () => {
+                    debugLog('Video metadata loaded');
+                    
+                    // Show video and hide loading screen
+                    remoteVideo.style.display = 'block';
+                    loadingScreen.style.display = 'none';
+                    
+                    // Show click-to-start overlay since we need user interaction
+                    if (!userInteracted) {
+                        clickToStart.style.display = 'flex';
+                        debugLog('Waiting for user interaction to start video');
+                    } else {
+                        // User already interacted, start playing immediately
+                        remoteVideo.play().catch(e => {
+                            debugLog(`Auto-play failed: ${e}`);
+                        });
+                    }
+                };
+
+                remoteVideo.onplay = () => {
+                    debugLog('Video started playing');
+                    updateStatus('connected', 'LIVE');
+                };
+
+                remoteVideo.onstalled = () => {
+                    debugLog('Video stalled');
+                };
+
+                remoteVideo.onwaiting = () => {
+                    debugLog('Video waiting for data');
+                };
+            });
+
+            peer.on('close', () => {
+                debugLog('Peer connection closed');
+                isConnected = false;
+                handleConnectionError('Video connection closed');
+            });
+
+            peer.on('error', (err) => {
+                debugLog(`Peer error: ${err}`);
+                isConnected = false;
+                handleConnectionError('Video connection failed');
+            });
+
+            debugLog('Peer connection setup complete, waiting for signals...');
+        }
+
+        function handleConnectionError(message) {
+            debugLog(`Connection error: ${message}`);
+
+            // Cleanup resources
+            cleanupConnection();
+
+            // Show error screen if max retries reached
+            if (connectionAttempts >= MAX_RETRIES) {
+                debugLog(`Max retries (${MAX_RETRIES}) reached`);
+                showError(message);
+            } else {
+                // Retry after delay
+                const delay = Math.min(1000 * Math.pow(2, connectionAttempts), 10000);
+                loadingText.textContent = `Connection attempt ${connectionAttempts} of ${MAX_RETRIES}`;
+                updateStatus('connecting', `Retrying... (${connectionAttempts}/${MAX_RETRIES})`);
+                debugLog(`Retrying in ${delay}ms...`);
+
+                retryTimeout = setTimeout(() => {
+                    setupSocketConnection();
+                }, delay);
+            }
+        }
+
+        function retryConnection() {
+            debugLog('Manual retry requested');
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+                retryTimeout = null;
+            }
+            initializeConnection();
+        }
+
+        function showError(message) {
+            debugLog(`Showing error: ${message}`);
+            errorMessage.textContent = message;
+            loadingScreen.style.display = 'none';
+            errorScreen.style.display = 'flex';
+            statusOverlay.style.display = 'none';
+            roomCodeDisplay.style.display = 'none';
+            remoteVideo.style.display = 'none';
+            clickToStart.style.display = 'none';
+            isConnected = false;
+        }
+
+        function updateStatus(status, text) {
+            statusDot.className = 'status-dot';
+            statusText.textContent = text;
+
+            if (status === 'connecting') {
+                statusDot.classList.add('connecting');
+            } else if (status === 'connected') {
+                statusDot.classList.add('connected');
+            }
+            
+            debugLog(`Status update: ${status} - ${text}`);
+        }
+
+        function cleanupConnection() {
+            debugLog('Cleaning up connection resources');
+            isConnected = false;
+            isStreamReady = false;
+
+            // Cleanup peer
+            if (peer) {
+                peer.destroy();
+                peer = null;
+                debugLog('Peer connection destroyed');
+            }
+
+            // Cleanup video
+            if (remoteVideo.srcObject) {
+                remoteVideo.srcObject.getTracks().forEach(track => {
+                    track.stop();
+                    debugLog(`Stopped track: ${track.kind}`);
+                });
+                remoteVideo.srcObject = null;
+                debugLog('Video tracks stopped');
+            }
+        }
+
+        function cleanupSocket() {
+            debugLog('Cleaning up socket listeners');
+            // Remove all socket listeners
+            socket.off('connect');
+            socket.off('room-joined');
+            socket.off('room-not-found');
+            socket.off('error');
+            socket.off('signal');
+            socket.off('phone-disconnected');
+            socket.off('disconnect');
+            socket.off('connect_error');
+        }
+
+        // Event Listeners for User Interaction
+        document.addEventListener('click', handleUserInteraction);
+        document.addEventListener('touchstart', handleUserInteraction);
+        document.addEventListener('keydown', handleUserInteraction);
+
+        // Handle page visibility
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                debugLog('Page hidden');
+                statusOverlay.style.opacity = '0.5';
+            } else {
+                debugLog('Page visible');
+                statusOverlay.style.opacity = '1';
+            }
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            debugLog('Page unloading, cleaning up...');
+            cleanupConnection();
+            cleanupSocket();
+            if (socket.connected) {
+                socket.disconnect();
+            }
+        });
+
+        // Prevent context menu on video
+        remoteVideo.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Handle online/offline events
+        window.addEventListener('online', () => {
+            debugLog('Network connection restored');
+            if (!isConnected && roomCode) {
+                retryConnection();
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            debugLog('Network connection lost');
+            handleConnectionError('Network connection lost');
+        });
+
+        // Initial debug info
+        debugLog('Viewer initialized');
+        debugLog(`WebRTC supported: ${!!window.RTCPeerConnection}`);
+        debugLog(`SimplePeer loaded: ${!!window.SimplePeer}`);
+        debugLog(`Socket.io connected: ${socket.connected}`);
+    </script>
+</body>
+</html>
