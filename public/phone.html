@@ -7,6 +7,49 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Your existing CSS remains the same, just adding these new styles */
+        
+        /* Add mirroring class for video */
+        .video-mirrored {
+            transform: scaleX(1) !important;
+        }
+        
+        /* Camera orientation controls */
+        .camera-orientation {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .orientation-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: var(--dark);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+        }
+        
+        .orientation-btn:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .orientation-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        /* Rest of your existing CSS remains unchanged */
         :root {
             --primary: #2563eb;
             --primary-dark: #1d4ed8;
@@ -127,6 +170,7 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
+            transition: transform 0.3s ease;
         }
 
         .video-controls {
@@ -426,6 +470,11 @@
                 font-size: 12px;
                 padding: 6px 10px;
             }
+            
+            .orientation-btn {
+                font-size: 11px;
+                padding: 8px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -555,6 +604,9 @@
                 <div class="video-container">
                     <video id="localVideo" autoplay playsinline muted></video>
                     <div class="video-controls">
+                        <button class="control-btn" id="mirrorBtn" title="Toggle Mirror">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
                         <button class="control-btn" id="switchCameraBtn" title="Switch Camera">
                             <i class="fas fa-camera-rotate"></i>
                         </button>
@@ -591,6 +643,18 @@
                     <select id="cameraSelect" class="camera-select">
                         <option value="">Loading cameras...</option>
                     </select>
+                    
+                    <!-- Camera Orientation Controls -->
+                    <div class="camera-orientation">
+                        <button class="orientation-btn active" id="frontCameraBtn">
+                            <i class="fas fa-user"></i>
+                            Front
+                        </button>
+                        <button class="orientation-btn" id="backCameraBtn">
+                            <i class="fas fa-mountain"></i>
+                            Back
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Controls -->
@@ -651,7 +715,10 @@
         const toggleVideoBtn = document.getElementById('toggleVideoBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         const switchCameraBtn = document.getElementById('switchCameraBtn');
+        const mirrorBtn = document.getElementById('mirrorBtn');
         const cameraSelect = document.getElementById('cameraSelect');
+        const frontCameraBtn = document.getElementById('frontCameraBtn');
+        const backCameraBtn = document.getElementById('backCameraBtn');
         const whatsappShare = document.getElementById('whatsappShare');
         const copyShare = document.getElementById('copyShare');
         const toast = document.getElementById('toast');
@@ -671,6 +738,8 @@
         // Camera management variables
         let availableCameras = [];
         let currentCameraIndex = 0;
+        let isMirrored = true; // Default to mirrored view (like a mirror)
+        let currentFacingMode = 'user'; // 'user' for front, 'environment' for back
 
         // Show toast message
         function showToast(message, type = 'info') {
@@ -691,6 +760,86 @@
                 const seconds = diff % 60;
                 durationInfo.textContent = 
                     `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // Toggle mirror effect
+        function toggleMirror() {
+            isMirrored = !isMirrored;
+            if (isMirrored) {
+                video.classList.remove('video-mirrored');
+                mirrorBtn.innerHTML = '<i class="fas fa-exchange-alt"></i>';
+                mirrorBtn.setAttribute('title', 'Disable Mirror');
+                showToast('Mirror mode enabled');
+            } else {
+                video.classList.add('video-mirrored');
+                mirrorBtn.innerHTML = '<i class="fas fa-exchange-alt" style="color: var(--primary);"></i>';
+                mirrorBtn.setAttribute('title', 'Enable Mirror');
+                showToast('Mirror mode disabled');
+            }
+        }
+
+        // Set camera by facing mode
+        async function setCameraByFacingMode(facingMode) {
+            currentFacingMode = facingMode;
+            
+            try {
+                // Stop current stream
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                const constraints = {
+                    video: {
+                        facingMode: { exact: facingMode },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 24 }
+                    },
+                    audio: false
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                
+                // Update all active peer connections with the new stream
+                updateAllPeers(stream);
+                
+                // Update UI
+                if (facingMode === 'user') {
+                    frontCameraBtn.classList.add('active');
+                    backCameraBtn.classList.remove('active');
+                    showToast('Switched to front camera');
+                } else {
+                    backCameraBtn.classList.add('active');
+                    frontCameraBtn.classList.remove('active');
+                    showToast('Switched to back camera');
+                }
+                
+                return true;
+            } catch (err) {
+                console.error(`Error switching to ${facingMode} camera:`, err);
+                
+                // Fallback to any available camera
+                try {
+                    const fallbackConstraints = {
+                        video: {
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 },
+                            frameRate: { ideal: 24 }
+                        },
+                        audio: false
+                    };
+                    
+                    stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                    video.srcObject = stream;
+                    showToast(`Using available camera (${facingMode} camera not available)`);
+                    return true;
+                } catch (fallbackErr) {
+                    console.error('Fallback camera also failed:', fallbackErr);
+                    showToast('Cannot access any camera', 'error');
+                    return false;
+                }
             }
         }
 
@@ -768,7 +917,7 @@
             }
         }
 
-        // Set specific camera
+        // Set specific camera by device ID
         async function setCamera(deviceId) {
             try {
                 // Stop current stream
@@ -811,42 +960,23 @@
             });
         }
 
-        // Switch camera
+        // Switch camera between front and back
         async function switchCamera() {
-            if (!availableCameras.length) {
-                availableCameras = await getCameras();
-                if (!availableCameras.length) {
-                    showToast('No cameras found', 'error');
-                    return;
-                }
+            if (currentFacingMode === 'user') {
+                await setCameraByFacingMode('environment');
+            } else {
+                await setCameraByFacingMode('user');
             }
-            
-            // Cycle to next camera
-            currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
-            await setCamera(availableCameras[currentCameraIndex].deviceId);
         }
 
         // Start back camera (for CCTV)
         async function startBackCamera() {
-            try {
-                const constraints = {
-                    video: {
-                        facingMode: { exact: "environment" }, // Back camera
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        frameRate: { ideal: 24 }
-                    },
-                    audio: false
-                };
-                
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                return true;
-            } catch (err) {
-                console.log('Back camera not available, trying any camera:', err);
-                // Fallback to any camera
-                return startAnyCamera();
-            }
+            return await setCameraByFacingMode('environment');
+        }
+
+        // Start front camera
+        async function startFrontCamera() {
+            return await setCameraByFacingMode('user');
         }
 
         // Start any camera
@@ -873,8 +1003,11 @@
 
         // Start camera
         async function startCamera() {
-            // Try back camera first for CCTV, fallback to any camera
-            const success = await startBackCamera();
+            // Try back camera first for CCTV, fallback to front, then any camera
+            let success = await startBackCamera();
+            if (!success) {
+                success = await startFrontCamera();
+            }
             if (success) {
                 await populateCameraSelect(); // Load available cameras
             }
@@ -1101,6 +1234,18 @@
 
         // Camera selection event handlers
         switchCameraBtn.addEventListener('click', switchCamera);
+        
+        // Mirror button handler
+        mirrorBtn.addEventListener('click', toggleMirror);
+
+        // Front/Back camera button handlers
+        frontCameraBtn.addEventListener('click', () => {
+            setCameraByFacingMode('user');
+        });
+
+        backCameraBtn.addEventListener('click', () => {
+            setCameraByFacingMode('environment');
+        });
 
         cameraSelect.addEventListener('change', (e) => {
             setCamera(e.target.value);
